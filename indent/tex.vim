@@ -60,6 +60,7 @@ function! VimtexIndent(lnum) abort " {{{1
   " Indent environments, delimiters, and tikz
   let l:ind = indent(l:prev_lnum)
   let l:ind += s:indent_envs(l:line, l:prev_line)
+  let l:ind += s:indent_hanging(l:line, a:lnum, l:prev_line, l:prev_lnum)
   let l:ind += s:indent_delims(l:line, a:lnum, l:prev_line, l:prev_lnum)
   let l:ind += s:indent_conditionals(l:line, a:lnum, l:prev_line, l:prev_lnum)
   let l:ind += s:indent_tikz(l:prev_lnum, l:prev_line)
@@ -133,6 +134,32 @@ function! s:indent_envs(cur, prev) abort " {{{1
 
   return l:ind
 endfunction
+
+function! s:indent_hanging(line, lnum, prev_line, prev_lnum) abort " {{{1
+
+  let l:ind = 0
+
+  if get(g:, 'vimtex_indent_hanging', 0)
+    return l:ind
+  endif
+
+  " If the previous line ends in a word character, and wasn't already
+  " indented, increase indent
+  " Note: this only really works if we are not already in an indented block
+  " (eg. an indent_env) - if this is the case, it 'gracefully' degrades
+  " to a more typical indent scheme
+  if a:prev_line =~# '\w\+\s*$' && a:prev_line !~# '^\s\+'
+    let l:ind += s:sw*1
+  endif
+
+  " If the previous line ends in punctuation, decrease indent
+  if a:prev_line =~# '[.?!]\s*$'
+    let l:ind -= s:sw*1
+  endif
+
+  return l:ind
+endfunction
+
 
 let s:envs_ignored = '\v'
       \ . join(get(g:, 'vimtex_indent_ignored_envs', ['document']), '|')
